@@ -1,13 +1,15 @@
-module.exports = api => ({
-  presets: [
-    [
-      '@babel/preset-env',
-      {
-        targets: {
-          node: 10,
+module.exports = api => {
+  api.cache(true);
+  return {
+    presets: [
+      [
+        '@babel/preset-env',
+        {
+          targets: {
+            node: 10,
+          },
         },
-      },
+      ],
     ],
-  ],
-  ignore: api.env('production') ? ['**/*.test.js'] : [],
-});
+  };
+};

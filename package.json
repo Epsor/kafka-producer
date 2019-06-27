@@ -13,8 +13,9 @@
   "scripts": {
     "dev": "nodemon -L --exec babel-node src/index.js",
     "prepare": "npm run build",
-    "build": "babel src -d dist --copy-files",
-    "test": "NODE_ENV=test jest --config=../../jest.config.json"
+    "test": "NODE_ENV=test jest",
+    "clean": "rm -rf dist",
+    "build": "babel src -d dist --ignore 'src/**/*.test.js'"
   },
   "bugs": {
     "url": "https://github.com/Epsor/epsor-v2/issues"
