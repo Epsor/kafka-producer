@@ -5,7 +5,7 @@
   "author": "Epsor",
   "homepage": "https://github.com/Epsor/epsor-v2/tree/master/packages/tunnel-b2c-api-test-kafka-producer#readme",
   "license": "ISC",
-  "main": "index.js",
+  "main": "dist/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Epsor/epsor-v2.git"
@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "nodemon -L --exec babel-node src/index.js",
     "prepare": "npm run build",
-    "test": "NODE_ENV=test jest",
+    "test": "NODE_ENV=test jest --coverage",
     "clean": "rm -rf dist",
     "build": "babel src -d dist --ignore 'src/**/*.test.js'"
   },
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@epsor/dto": "^2.0.0",
-    "kafka-node": "^4.1.3",
+    "node-rdkafka": "^2.7.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {

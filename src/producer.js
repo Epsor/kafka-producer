@@ -1,9 +1,5 @@
-import kafka from 'kafka-node';
-import uuid from 'uuid';
-
-const DEFAULT_OPTIONS = {
-  requireAcks: 'all',
-};
+import kafka from 'node-rdkafka';
+import uuidFactory from 'uuid';
 
 /**
  * This class encapsulate the initialization and the call of a kafka
@@ -11,42 +7,89 @@ const DEFAULT_OPTIONS = {
  */
 class Producer {
   constructor() {
-    this.client = new kafka.KafkaClient({
-      kafkaHost: process.env.KAFKA_HOST || 'localhost:9092',
+    this.producer = new kafka.Producer({
+      debug: 'all',
+      dr_cb: true,
+      'metadata.broker.list': process.env.KAFKA_HOST || 'localhost:9092',
     });
-
-    this.producer = new kafka.Producer(this.client);
   }
 
   /**
-   * This call close the connection to the kafka cluster
+   * This disconnect the producer from the pool
+   *
+   * @async
    */
-  close() {
-    this.client.close();
+  disconnect() {
+    if (!this.isConnected()) return null;
+
+    return new Promise(resolve => {
+      this.producer.on('disconnected', resolve);
+      return this.producer.disconnect();
+    });
+  }
+
+  /**
+   * Connect the producer to the cluster
+   *
+   * @returns {Promise} - The callback
+   *
+   * @async
+   */
+  connect() {
+    if (this.isConnected()) return null;
+    return new Promise((resole, reject) => {
+      try {
+        this.producer.connect();
+        return this.producer.on('ready', resole);
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  /**
+   * Test is the producer is connected
+   *
+   * @return {Boolean} - True if the producer is connected
+   */
+  isConnected() {
+    return this.producer.isConnected();
   }
 
   /**
    * Produce a message to kafka cluster
    *
    * @async
-   * @param {String} message    - The message to publish to the topic `topic`
-   * @param {String} topic      - The targeted topic
-   * @param {Object} opts       - The overried options
-   * @return {Promise<Object>}  - Response of kafka
+   * @param {Oject}             message                          - The message to publish to the topic `topic`
+   * @param {Oject}             message.fields                   - The message content
+   * @param {Object}            message.headers                  - Headers of the messages
+   * @param {Object|undefined}  message.config                   - Message config
+   * @param {Date|undefined}    message.config.date              - Headers of the messages
+   * @param {int|undefined}     message.config.partition         - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
+   * @param {string}            message.config.uuid              - Message uuid. If not set, one will be set
+   * @param {String}            topic                            - The targeted topic
+   *
+   * @throws {Error} - It throws an error if the message is not well sent
    */
-  produce(message, topic, opts = {}) {
-    const payload = {
-      ...DEFAULT_OPTIONS,
-      ...opts,
-      topic,
-      messages: message,
-    };
-    if (!opts.uuid) {
-      payload.uuid = uuid.v4();
+  async produce({ fields, headers, config }, topic) {
+    if (!this.isConnected()) {
+      await this.connect();
     }
-    return new Promise((resolve, reject) =>
-      this.producer.send([payload], (error, data) => (error ? reject(error) : resolve(data))),
+    const { date, partition, uuid } = config || {};
+
+    const isSent = this.producer.produce(
+      topic,
+      partition,
+      Buffer.from(JSON.stringify({ ...fields, headers })),
+      uuid || uuidFactory.v4(),
+      date || Date.now(),
+      undefined,
+      headers,
     );
+
+    if (!isSent) {
+      throw new Error('Message not sent to Kafka.');
+    }
   }
 }
 

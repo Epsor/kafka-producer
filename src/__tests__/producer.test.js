@@ -1,75 +1,179 @@
 import uuidMock from 'uuid';
-import kafkaNode from 'kafka-node';
+import kafka from 'node-rdkafka';
 
 import Producer from '../producer';
 
 const defaultEnv = process.env;
+let dateNowSpy;
 
 describe('Producer', () => {
-  beforeEach(() => {
-    uuidMock.v4.mockClear();
-    kafkaNode.KafkaClient.mockClear();
-    kafkaNode.Producer.mockClear();
+  beforeAll(() => {
+    // Lock Time
+    dateNowSpy = jest.spyOn(Date, 'now').mockImplementation(() => 1487076708000);
+  });
+
+  afterAll(() => {
+    // Unlock Time
+    dateNowSpy.mockRestore();
   });
 
   describe('Contructor', () => {
     beforeEach(() => {
       process.env = defaultEnv;
+      kafka.Producer.mockClear();
     });
 
-    it('should call kafka-node.kafkaClient with default kafkaHost', () => {
+    it('should call kafka-node.Producer with default kafkaHost', () => {
       if (process.env.KAFKA_HOST) {
         delete process.env.KAFKA_HOST;
       }
 
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledTimes(0);
+      expect(kafka.Producer).toHaveBeenCalledTimes(0);
       expect(new Producer()).toBeTruthy();
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledTimes(1);
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledWith({
-        kafkaHost: 'localhost:9092',
+      expect(kafka.Producer).toHaveBeenCalledTimes(1);
+      expect(kafka.Producer).toHaveBeenCalledWith({
+        debug: 'all',
+        dr_cb: true,
+        'metadata.broker.list': 'localhost:9092',
       });
     });
 
-    it('should call kafka-node.kafkaClient with KAFKA_HOST', () => {
+    it('should call node-rdkafka.Producer with KAFKA_HOST', () => {
       process.env.KAFKA_HOST = 'myNewHostValue';
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledTimes(0);
-      expect(new Producer()).toBeTruthy();
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledTimes(1);
-      expect(kafkaNode.KafkaClient).toHaveBeenCalledWith({
-        kafkaHost: 'myNewHostValue',
-      });
-    });
 
-    it('should call kafka-node.Producer', () => {
-      expect(kafkaNode.Producer).toHaveBeenCalledTimes(0);
+      expect(kafka.Producer).toHaveBeenCalledTimes(0);
       expect(new Producer()).toBeTruthy();
-      expect(kafkaNode.Producer).toHaveBeenCalledTimes(1);
+      expect(kafka.Producer).toHaveBeenCalledTimes(1);
+      expect(kafka.Producer).toHaveBeenCalledWith({
+        debug: 'all',
+        dr_cb: true,
+        'metadata.broker.list': 'myNewHostValue',
+      });
     });
   });
 
-  describe('close', () => {
-    it('should call kafka-node.Client.close', () => {
-      const ClientClose = jest.fn();
-      kafkaNode.KafkaClient = jest.fn().mockImplementation(() => ({
-        close: ClientClose,
+  describe('disconnect', () => {
+    it('should call Producer.isConnected', () => {
+      const isConnected = jest.fn(() => false);
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
       }));
       const producer = new Producer();
-      expect(ClientClose).toHaveBeenCalledTimes(0);
-      producer.close();
-      expect(ClientClose).toHaveBeenCalledTimes(1);
+      expect(isConnected).toHaveBeenCalledTimes(0);
+      producer.disconnect();
+      expect(isConnected).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return a promise if allready connected', () => {
+      const isConnected = jest.fn(() => true);
+      const on = jest.fn(() => null);
+      const disconnect = jest.fn(() => null);
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        on,
+        disconnect,
+      }));
+      const producer = new Producer();
+      expect(disconnect).toHaveBeenCalledTimes(0);
+      const promise = producer.disconnect();
+      expect(typeof promise.then).toBe('function');
+      expect(disconnect).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('connect', () => {
+    it('should call Producer.isConnected', () => {
+      const isConnected = jest.fn(() => false);
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+      }));
+      const producer = new Producer();
+      expect(isConnected).toHaveBeenCalledTimes(0);
+      producer.disconnect();
+      expect(isConnected).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw then connect throw', async () => {
+      const isConnected = jest.fn(() => false);
+      const connect = jest.fn(() => {
+        throw new Error('tested');
+      });
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+      }));
+      const producer = new Producer();
+      expect(isConnected).toHaveBeenCalledTimes(0);
+      expect(connect).toHaveBeenCalledTimes(0);
+      await expect(producer.connect()).rejects.toEqual(new Error('tested'));
+      expect(isConnected).toHaveBeenCalledTimes(1);
+      expect(connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not connect if connected', async () => {
+      const isConnected = jest.fn(() => true);
+      const connect = jest.fn();
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+      }));
+      const producer = new Producer();
+      expect(isConnected).toHaveBeenCalledTimes(0);
+      expect(connect).toHaveBeenCalledTimes(0);
+      await producer.connect();
+      expect(isConnected).toHaveBeenCalledTimes(1);
+      expect(connect).toHaveBeenCalledTimes(0);
     });
   });
 
   describe('produce', () => {
-    it('should call kafka-node.send', () => {
-      const send = jest.fn();
-      kafkaNode.Producer = jest.fn().mockImplementation(() => ({
-        send,
+    it('should connect if not connected', () => {
+      const isConnected = jest.fn(() => false);
+      const on = jest.fn(() => null);
+      const connect = jest.fn();
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+        on,
       }));
+
       const producer = new Producer();
-      expect(send).toHaveBeenCalledTimes(0);
-      producer.produce('coucou', 'topic');
-      expect(send).toHaveBeenCalledTimes(1);
+      expect(connect).toHaveBeenCalledTimes(0);
+      producer.produce({ fields: {}, headers: {}, config: {} });
+      expect(connect).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not connect if connected', () => {
+      const isConnected = jest.fn(() => true);
+      const connect = jest.fn();
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+        produce,
+      }));
+
+      const producer = new Producer();
+      expect(connect).toHaveBeenCalledTimes(0);
+      producer.produce({ fields: {}, headers: {}, config: {} });
+      expect(connect).toHaveBeenCalledTimes(0);
+    });
+
+    it('should call produce', () => {
+      const isConnected = jest.fn(() => true);
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        produce,
+      }));
+
+      const producer = new Producer();
+      expect(produce).toHaveBeenCalledTimes(0);
+      producer.produce({ fields: {}, headers: {}, config: {} });
+      expect(produce).toHaveBeenCalledTimes(1);
     });
 
     it('should generate an uuid v4 if messageId is not given', () => {
@@ -86,40 +190,75 @@ describe('Producer', () => {
 
       expect(uuidMock.v4).toHaveBeenCalledTimes(0);
       const producer = new Producer();
-      producer.produce('coucou', 'topic', { uuid: 'given' });
+      producer.produce({ fields: {}, headers: {}, config: { uuid: 'given' } });
       expect(uuidMock.v4).toHaveBeenCalledTimes(0);
     });
 
-    it('should returns a promise', () => {
+    it('should call with default values', () => {
+      uuidMock.v4 = jest.fn(() => 'uuid');
+
+      const isConnected = jest.fn(() => true);
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        produce,
+      }));
+
       const producer = new Producer();
-      const promise = producer.produce('coucou', 'topic');
-      expect(typeof promise.then).toBe('function');
+      expect(produce).toHaveBeenCalledTimes(0);
+      producer.produce({ fields: {}, headers: {}, config: {} }, 'topic');
+      expect(produce).toHaveBeenCalledTimes(1);
+      expect(produce).toHaveBeenCalledWith(
+        'topic',
+        undefined,
+        Buffer.from('{"headers":{}}'),
+        'uuid',
+        1487076708000,
+        undefined,
+        {},
+      );
     });
 
-    it('should throw when send calls callback with error', async () => {
-      const error = new Error('myError');
-      const send = jest.fn((args, cb) => {
-        return cb(error);
-      });
+    it('should call with partition', () => {
+      uuidMock.v4 = jest.fn(() => 'uuid');
 
-      kafkaNode.Producer = jest.fn().mockImplementation(() => ({
-        send,
+      const isConnected = jest.fn(() => true);
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        produce,
       }));
+
       const producer = new Producer();
-      await expect(producer.produce('coucou', 'error')).rejects.toEqual(error);
+      expect(produce).toHaveBeenCalledTimes(0);
+      producer.produce({ fields: {}, headers: {}, config: { partition: 123 } }, 'topic');
+      expect(produce).toHaveBeenCalledTimes(1);
+      expect(produce).toHaveBeenCalledWith(
+        'topic',
+        123,
+        Buffer.from('{"headers":{}}'),
+        'uuid',
+        1487076708000,
+        undefined,
+        {},
+      );
     });
 
-    it('should not throw when send calls callback without error', async () => {
-      const response = { key: 'value' };
-      const send = jest.fn((args, cb) => {
-        return cb(null, response);
-      });
+    it('should throw when produce fails', async () => {
+      const isConnected = jest.fn(() => true);
+      const produce = jest.fn(() => false);
 
-      kafkaNode.Producer = jest.fn().mockImplementation(() => ({
-        send,
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        produce,
       }));
+
       const producer = new Producer();
-      await expect(producer.produce('coucou', 'error')).resolves.toEqual(response);
+      await expect(producer.produce({}, 'topic')).rejects.toEqual(
+        new Error('Message not sent to Kafka.'),
+      );
     });
   });
 });
