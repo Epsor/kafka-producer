@@ -140,7 +140,7 @@ describe('Producer', () => {
 
       const producer = new Producer();
       expect(connect).toHaveBeenCalledTimes(0);
-      producer.produce({ fields: {}, headers: {}, config: {} });
+      producer.produce({ headers: {}, config: {} });
       expect(connect).toHaveBeenCalledTimes(1);
     });
 
@@ -157,7 +157,7 @@ describe('Producer', () => {
 
       const producer = new Producer();
       expect(connect).toHaveBeenCalledTimes(0);
-      producer.produce({ fields: {}, headers: {}, config: {} });
+      producer.produce({ headers: {}, config: {} });
       expect(connect).toHaveBeenCalledTimes(0);
     });
 
@@ -172,25 +172,43 @@ describe('Producer', () => {
 
       const producer = new Producer();
       expect(produce).toHaveBeenCalledTimes(0);
-      producer.produce({ fields: {}, headers: {}, config: {} });
+      producer.produce({ headers: {}, config: {} });
       expect(produce).toHaveBeenCalledTimes(1);
     });
 
     it('should generate an uuid v4 if messageId is not given', () => {
       uuidMock.v4 = jest.fn(() => '');
+      const isConnected = jest.fn(() => true);
+      const connect = jest.fn();
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+        produce,
+      }));
 
       expect(uuidMock.v4).toHaveBeenCalledTimes(0);
       const producer = new Producer();
-      producer.produce('coucou', 'topic');
+      producer.produce({}, 'topic');
       expect(uuidMock.v4).toHaveBeenCalledTimes(1);
     });
 
     it('should generate an uuid v4 if messageId is not given', () => {
       uuidMock.v4 = jest.fn(() => '');
+      const isConnected = jest.fn(() => true);
+      const connect = jest.fn();
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        connect,
+        produce,
+      }));
 
       expect(uuidMock.v4).toHaveBeenCalledTimes(0);
       const producer = new Producer();
-      producer.produce({ fields: {}, headers: {}, config: { uuid: 'given' } });
+      producer.produce({ headers: { uuid: 'given' } });
       expect(uuidMock.v4).toHaveBeenCalledTimes(0);
     });
 
@@ -207,12 +225,38 @@ describe('Producer', () => {
 
       const producer = new Producer();
       expect(produce).toHaveBeenCalledTimes(0);
-      producer.produce({ fields: {}, headers: {}, config: {} }, 'topic');
+      producer.produce({ headers: {} }, 'topic');
       expect(produce).toHaveBeenCalledTimes(1);
       expect(produce).toHaveBeenCalledWith(
         'topic',
         undefined,
         Buffer.from('{"headers":{}}'),
+        'uuid',
+        1487076708000,
+        undefined,
+        {},
+      );
+    });
+
+    it('should call with good values', () => {
+      uuidMock.v4 = jest.fn(() => 'uuid');
+
+      const isConnected = jest.fn(() => true);
+      const produce = jest.fn(() => true);
+
+      kafka.Producer = jest.fn().mockImplementation(() => ({
+        isConnected,
+        produce,
+      }));
+
+      const producer = new Producer();
+      expect(produce).toHaveBeenCalledTimes(0);
+      producer.produce({ key: 'value', headers: {} }, 'topic');
+      expect(produce).toHaveBeenCalledTimes(1);
+      expect(produce).toHaveBeenCalledWith(
+        'topic',
+        undefined,
+        Buffer.from('{"key":"value","headers":{}}'),
         'uuid',
         1487076708000,
         undefined,
@@ -233,7 +277,7 @@ describe('Producer', () => {
 
       const producer = new Producer();
       expect(produce).toHaveBeenCalledTimes(0);
-      producer.produce({ fields: {}, headers: {}, config: { partition: 123 } }, 'topic');
+      producer.produce({ headers: { partition: 123 } }, 'topic');
       expect(produce).toHaveBeenCalledTimes(1);
       expect(produce).toHaveBeenCalledWith(
         'topic',

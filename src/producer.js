@@ -1,5 +1,8 @@
 import kafka from 'node-rdkafka';
 import uuidFactory from 'uuid';
+import omit from 'lodash/fp/omit';
+
+const ommitHeaders = omit(['headers']);
 
 /**
  * This class encapsulate the initialization and the call of a kafka
@@ -61,26 +64,24 @@ class Producer {
    *
    * @async
    * @param {Oject}             message                          - The message to publish to the topic `topic`
-   * @param {Oject}             message.fields                   - The message content
    * @param {Object}            message.headers                  - Headers of the messages
-   * @param {Object|undefined}  message.config                   - Message config
-   * @param {Date|undefined}    message.config.date              - Headers of the messages
-   * @param {int|undefined}     message.config.partition         - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
-   * @param {string}            message.config.uuid              - Message uuid. If not set, one will be set
+   * @param {Date|undefined}    message.hreader.date             - Headers of the messages
+   * @param {int|undefined}     message.hreader.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
+   * @param {string}            message.hreader.uuid             - Message uuid. If not set, one will be set
    * @param {String}            topic                            - The targeted topic
    *
    * @throws {Error} - It throws an error if the message is not well sent
    */
-  async produce({ fields, headers, config }, topic) {
+  async produce(message, topic) {
     if (!this.isConnected()) {
       await this.connect();
     }
-    const { date, partition, uuid } = config || {};
+    const { date, partition, uuid, ...headers } = message.headers || {};
 
     const isSent = this.producer.produce(
       topic,
       partition,
-      Buffer.from(JSON.stringify({ ...fields, headers })),
+      Buffer.from(JSON.stringify({ ...ommitHeaders(message), headers })),
       uuid || uuidFactory.v4(),
       date || Date.now(),
       undefined,
