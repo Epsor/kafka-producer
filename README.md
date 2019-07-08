@@ -16,7 +16,7 @@ import uuid from 'uuid';
 const message = {
   headers: {
     version: 'v1.0',
-    type: 'user.create',
+    type: 'user.created',
     uuid: uuid.v4(),
   },
   uuid: uuid.v4(),
@@ -27,7 +27,7 @@ const message = {
 
 (async () => {
   try {
-    await producer.produce(message, 'events-v1.0.2');
+    await producer.produce(message, 'events-v1.0.4');
   } finally {
     await producer.disconnect();
   }
