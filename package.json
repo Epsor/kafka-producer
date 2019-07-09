@@ -15,7 +15,8 @@
     "prepare": "npm run build",
     "test": "NODE_ENV=test jest --coverage",
     "clean": "rm -rf dist",
-    "build": "babel src -d dist --ignore 'src/**/*.test.js'"
+    "build": "babel src -d dist --ignore 'src/**/*.test.js'",
+    "start": "babel src -d dist --ignore 'src/**/*.test.js' --watch"
   },
   "bugs": {
     "url": "https://github.com/Epsor/epsor-v2/issues"
