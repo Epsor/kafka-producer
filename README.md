@@ -27,7 +27,7 @@ const message = {
 
 (async () => {
   try {
-    await producer.produce(message, 'events-v1.0.4');
+    await producer.produce(message, process.env.EVENT_TOPIC);
   } finally {
     await producer.disconnect();
   }

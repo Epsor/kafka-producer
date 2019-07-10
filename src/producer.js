@@ -13,6 +13,7 @@ class Producer {
     this.producer = new kafka.Producer({
       debug: 'all',
       dr_cb: true,
+      'enable.idempotence': true,
       'metadata.broker.list': process.env.KAFKA_HOST || 'localhost:9092',
     });
   }
