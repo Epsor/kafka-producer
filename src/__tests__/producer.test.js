@@ -31,11 +31,12 @@ describe('Producer', () => {
       expect(kafka.Producer).toHaveBeenCalledTimes(0);
       expect(new Producer()).toBeTruthy();
       expect(kafka.Producer).toHaveBeenCalledTimes(1);
-      expect(kafka.Producer).toHaveBeenCalledWith({
-        debug: 'all',
-        dr_cb: true,
-        'metadata.broker.list': 'localhost:9092',
-      });
+      expect(kafka.Producer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dr_cb: true,
+          'metadata.broker.list': 'localhost:9092',
+        }),
+      );
     });
 
     it('should call node-rdkafka.Producer with KAFKA_HOST', () => {
@@ -44,11 +45,12 @@ describe('Producer', () => {
       expect(kafka.Producer).toHaveBeenCalledTimes(0);
       expect(new Producer()).toBeTruthy();
       expect(kafka.Producer).toHaveBeenCalledTimes(1);
-      expect(kafka.Producer).toHaveBeenCalledWith({
-        debug: 'all',
-        dr_cb: true,
-        'metadata.broker.list': 'myNewHostValue',
-      });
+      expect(kafka.Producer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dr_cb: true,
+          'metadata.broker.list': 'myNewHostValue',
+        }),
+      );
     });
   });
 
