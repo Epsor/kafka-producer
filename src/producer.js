@@ -68,7 +68,7 @@ class Producer {
    * @param {Object}            message.headers                  - Headers of the messages
    * @param {Date|undefined}    message.hreader.date             - Headers of the messages
    * @param {int|undefined}     message.hreader.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
-   * @param {string}            message.hreader.uuid             - Message uuid. If not set, one will be set
+   * @param {String}            message.hreader.uuid             - Message uuid. If not set, one will be set
    * @param {String}            topic                            - The targeted topic
    *
    * @throws {Error} - It throws an error if the message is not well sent
