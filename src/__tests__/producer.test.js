@@ -17,7 +17,7 @@ describe('Producer', () => {
     dateNowSpy.mockRestore();
   });
 
-  describe('Contructor', () => {
+  describe('Constructor', () => {
     beforeEach(() => {
       process.env = defaultEnv;
       kafka.Producer.mockClear();
