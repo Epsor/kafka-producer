@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/Epsor/kafka-producer.svg?style=svg)](https://circleci.com/gh/Epsor/kafka-producer) [![npm version](https://img.shields.io/npm/v/@epsor/kafka-producer.svg)](https://npmjs.org/package/@epsor/kafka-producer.svg "View this project on npm")
+
 # `@epsor/kafka-producer`
 
 The is the packet which has the responsability to encode/decode mesages for/to the event store.
