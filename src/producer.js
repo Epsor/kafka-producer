@@ -15,6 +15,8 @@ class Producer {
       dr_cb: true,
       'enable.idempotence': true,
       'metadata.broker.list': process.env.KAFKA_HOST || 'localhost:9092',
+      ...(process.env.KAFKA_USERNAME ? { 'sasl.username': process.env.KAFKA_USERNAME } : {}),
+      ...(process.env.KAFKA_PASSWORD ? { 'sasl.password': process.env.KAFKA_PASSWORD } : {}),
     });
   }
 

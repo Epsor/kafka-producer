@@ -5,16 +5,19 @@ import Producer from '../producer';
 
 const defaultEnv = process.env;
 let dateNowSpy;
+let beforeEnv;
 
 describe('Producer', () => {
   beforeAll(() => {
     // Lock Time
     dateNowSpy = jest.spyOn(Date, 'now').mockImplementation(() => 1487076708000);
+    beforeEnv = { ...process.env };
   });
 
   afterAll(() => {
     // Unlock Time
     dateNowSpy.mockRestore();
+    process.env = beforeEnv;
   });
 
   describe('Constructor', () => {
@@ -35,6 +38,38 @@ describe('Producer', () => {
         expect.objectContaining({
           dr_cb: true,
           'metadata.broker.list': 'localhost:9092',
+        }),
+      );
+    });
+
+    it('should call kafka-node.Producer without username', () => {
+      if (!process.env.KAFKA_USERNAME) {
+        process.env.KAFKA_USERNAME = 'username';
+      }
+
+      expect(kafka.Producer).toHaveBeenCalledTimes(0);
+      expect(new Producer()).toBeTruthy();
+      expect(kafka.Producer).toHaveBeenCalledTimes(1);
+      expect(kafka.Producer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dr_cb: true,
+          'sasl.username': 'username',
+        }),
+      );
+    });
+
+    it('should call kafka-node.Producer without password', () => {
+      if (!process.env.KAFKA_PASSWORD) {
+        process.env.KAFKA_PASSWORD = 'password';
+      }
+
+      expect(kafka.Producer).toHaveBeenCalledTimes(0);
+      expect(new Producer()).toBeTruthy();
+      expect(kafka.Producer).toHaveBeenCalledTimes(1);
+      expect(kafka.Producer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          dr_cb: true,
+          'sasl.password': 'password',
         }),
       );
     });
