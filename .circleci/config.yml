@@ -5,6 +5,9 @@ jobs:
       - image: circleci/node:lts
     steps:
       - checkout
+      - run:
+          name: 'NPM token'
+          command: echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
       - restore_cache:
           key: npm-{{ checksum "package-lock.json" }}
       - run: npm install --production
@@ -14,6 +17,9 @@ jobs:
       - image: circleci/node:lts
     steps:
       - checkout
+      - run:
+          name: 'NPM token'
+          command: echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
       - restore_cache:
           key: npm-{{ checksum "package-lock.json" }}
       - run: npm install
@@ -28,6 +34,9 @@ jobs:
       - image: circleci/node:lts
     steps:
       - checkout
+      - run:
+          name: 'NPM token'
+          command: echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
       - restore_cache:
           key: npm-{{ checksum "package-lock.json" }}
       - run: npm install --ignore-scripts
