@@ -1,23 +1,42 @@
-import kafka from 'node-rdkafka';
-import uuidFactory from 'uuid';
-import omit from 'lodash/fp/omit';
-
-const ommitHeaders = omit(['headers']);
+import kafkaNode from 'kafka-node';
 
 /**
  * This class encapsulate the initialization and the call of a kafka
  * library to produce a message.
  */
 class Producer {
-  constructor() {
-    this.producer = new kafka.Producer({
-      debug: 'all',
-      dr_cb: true,
-      'enable.idempotence': true,
-      'metadata.broker.list': process.env.KAFKA_HOST || 'localhost:9092',
-      ...(process.env.KAFKA_USERNAME ? { 'sasl.username': process.env.KAFKA_USERNAME } : {}),
-      ...(process.env.KAFKA_PASSWORD ? { 'sasl.password': process.env.KAFKA_PASSWORD } : {}),
+  /**
+   * @param {Object} options         - Stream options
+   * @param {String} options.groupId - Stream group identifier
+   */
+  constructor({
+    requireAcks = 1,
+    ackTimeoutMs = 100,
+    kafkaHost = undefined,
+    apiKey = undefined,
+    apiSecret = undefined,
+    ...opts
+  } = {}) {
+    this.client = new kafkaNode.KafkaClient({
+      kafkaHost: kafkaHost || process.env.KAFKA_HOST || 'localhost:9092',
+      fromOffset: 'earliest',
+      protocol: ['roundrobin'],
+      ...(apiKey && apiSecret
+        ? {
+            sasl: {
+              mechanism: 'plain',
+              username: apiKey,
+              password: apiSecret,
+            },
+          }
+        : {}),
+      ...opts,
     });
+
+    this.opts = {
+      requireAcks,
+      ackTimeoutMs,
+    };
   }
 
   /**
@@ -29,8 +48,7 @@ class Producer {
     if (!this.isConnected()) return null;
 
     return new Promise(resolve => {
-      this.producer.on('disconnected', resolve);
-      return this.producer.disconnect();
+      resolve('not implemented by kafka-node');
     });
   }
 
@@ -43,10 +61,12 @@ class Producer {
    */
   connect() {
     if (this.isConnected()) return null;
-    return new Promise((resole, reject) => {
+
+    return new Promise((resolve, reject) => {
       try {
-        this.producer.connect();
-        return this.producer.on('ready', resole);
+        this.producer = new kafkaNode.Producer(this.client, this.opts);
+        this.producer.on('error', reject);
+        return this.producer.on('ready', resolve);
       } catch (err) {
         return reject(err);
       }
@@ -59,7 +79,7 @@ class Producer {
    * @return {Boolean} - True if the producer is connected
    */
   isConnected() {
-    return this.producer.isConnected();
+    return !!this.producer;
   }
 
   /**
@@ -68,9 +88,6 @@ class Producer {
    * @async
    * @param {Oject}             message                          - The message to publish to the topic `topic`
    * @param {Object}            message.headers                  - Headers of the messages
-   * @param {Date|undefined}    message.hreader.date             - Headers of the messages
-   * @param {int|undefined}     message.hreader.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
-   * @param {String}            message.hreader.uuid             - Message uuid. If not set, one will be set
    * @param {String}            topic                            - The targeted topic
    *
    * @throws {Error} - It throws an error if the message is not well sent
@@ -79,21 +96,18 @@ class Producer {
     if (!this.isConnected()) {
       await this.connect();
     }
-    const { date, partition, uuid, ...headers } = message.headers || {};
 
-    const isSent = this.producer.produce(
-      topic,
-      partition,
-      Buffer.from(JSON.stringify({ ...ommitHeaders(message), headers })),
-      uuid || uuidFactory.v4(),
-      date || Date.now(),
-      undefined,
-      headers,
+    return new Promise((resolve, reject) =>
+      this.producer.send(
+        [
+          {
+            topic: topic || process.env.KAFKA_TOPIC || 'epsor',
+            messages: JSON.stringify(message),
+          },
+        ],
+        (err, data) => (err ? reject(err) : resolve(data)),
+      ),
     );
-
-    if (!isSent) {
-      throw new Error('Message not sent to Kafka.');
-    }
   }
 }
 
