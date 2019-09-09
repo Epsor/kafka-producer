@@ -88,7 +88,6 @@ class Producer {
    * @async
    * @param {Oject}             message                          - The message to publish to the topic `topic`
    * @param {Object}            message.headers                  - Headers of the messages
-   * @param {int|undefined}     message.headers.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
    * @param {String}            topic                            - The targeted topic
    *
    * @throws {Error} - It throws an error if the message is not well sent
@@ -98,15 +97,12 @@ class Producer {
       await this.connect();
     }
 
-    const { partition } = message.headers || {};
-
     return new Promise((resolve, reject) =>
       this.producer.send(
         [
           {
             topic: topic || process.env.KAFKA_TOPIC || 'epsor',
             messages: JSON.stringify(message),
-            partition,
           },
         ],
         (err, data) => (err ? reject(err) : resolve(data)),
