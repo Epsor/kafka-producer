@@ -9,14 +9,47 @@ const ommitHeaders = omit(['headers']);
  * library to produce a message.
  */
 class Producer {
-  constructor() {
+  /**
+   * Producer constructor
+   *
+   * @param {Object} options
+   * @param {Object} options.kafkaHost
+   * @param {Object} options.apiKey
+   * @param {Object} options.apiSecret
+   *
+   * @returns {Producer}
+   */
+  constructor({
+    kafkaHost = process.env.KAFKA_HOST,
+    apiKey = process.env.KAFKA_USERNAME,
+    apiSecret = process.env.KAFKA_PASSWORD,
+    ...rest
+  } = {}) {
+    const sasl =
+      apiKey && apiSecret
+        ? {
+            'security.protocol': 'SASL_SSL',
+            'sasl.mechanisms': 'PLAIN',
+            'sasl.username': apiKey,
+            'sasl.password': apiSecret,
+          }
+        : {};
+
     this.producer = new kafka.Producer({
       debug: 'all',
       dr_cb: true,
       'enable.idempotence': true,
-      'metadata.broker.list': process.env.KAFKA_HOST || 'localhost:9092',
-      ...(process.env.KAFKA_USERNAME ? { 'sasl.username': process.env.KAFKA_USERNAME } : {}),
-      ...(process.env.KAFKA_PASSWORD ? { 'sasl.password': process.env.KAFKA_PASSWORD } : {}),
+      'metadata.broker.list': kafkaHost || 'localhost:9092',
+      'api.version.request': true,
+      'retry.backoff.ms': 1000,
+      'message.send.max.retries': 5,
+      'socket.keepalive.enable': true,
+      'delivery.report.only.error': false,
+      'socket.timeout.ms': 30000,
+      dr_msg_cb: true,
+      'log.connection.close': false,
+      ...sasl,
+      ...rest,
     });
   }
 

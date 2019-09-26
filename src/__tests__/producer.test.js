@@ -26,7 +26,7 @@ describe('Producer', () => {
       kafka.Producer.mockClear();
     });
 
-    it('should call kafka-node.Producer with default kafkaHost', () => {
+    it('should call kafka.Producer with default kafkaHost', () => {
       if (process.env.KAFKA_HOST) {
         delete process.env.KAFKA_HOST;
       }
@@ -42,9 +42,10 @@ describe('Producer', () => {
       );
     });
 
-    it('should call kafka-node.Producer without username', () => {
+    it('should call kafka.Producer without username', () => {
       if (!process.env.KAFKA_USERNAME) {
         process.env.KAFKA_USERNAME = 'username';
+        process.env.KAFKA_PASSWORD = 'password';
       }
 
       expect(kafka.Producer).toHaveBeenCalledTimes(0);
@@ -58,7 +59,7 @@ describe('Producer', () => {
       );
     });
 
-    it('should call kafka-node.Producer without password', () => {
+    it('should call kafka.Producer without password', () => {
       if (!process.env.KAFKA_PASSWORD) {
         process.env.KAFKA_PASSWORD = 'password';
       }
