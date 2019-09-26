@@ -1,3 +1,3 @@
 import Producer from './producer';
 
-export default Producer;
+export default new Producer();

@@ -23,7 +23,6 @@ class Producer {
       protocol: ['roundrobin'],
       ...(apiKey && apiSecret
         ? {
-            sslOptions: {},
             sasl: {
               mechanism: 'plain',
               username: apiKey,
