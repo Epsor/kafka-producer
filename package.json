@@ -1,6 +1,6 @@
 {
   "name": "@epsor/kafka-producer",
-  "version": "2.0.5",
+  "version": "3.1.0",
   "description": "Kafka producer abstraction",
   "author": "Epsor",
   "homepage": "https://github.com/Epsor/epsor-v2/tree/master/packages/tunnel-b2c-api-test-kafka-producer#readme",
