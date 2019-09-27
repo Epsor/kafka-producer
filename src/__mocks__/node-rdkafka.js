@@ -5,6 +5,6 @@ export const ProducerMethods = {
   produce: jest.fn(),
 };
 
-export const Producer = jest.fn().mockImplementation(() => ProducerMethods);
+export const HighLevelProducer = jest.fn().mockImplementation(() => ProducerMethods);
 
-module.exports = { Producer };
+module.exports = { HighLevelProducer };

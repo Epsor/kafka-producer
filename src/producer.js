@@ -35,7 +35,7 @@ class Producer {
           }
         : {};
 
-    this.producer = new kafka.Producer({
+    this.producer = new kafka.HighLevelProducer({
       debug: 'all',
       dr_cb: true,
       'enable.idempotence': true,
@@ -76,10 +76,10 @@ class Producer {
    */
   connect() {
     if (this.isConnected()) return null;
-    return new Promise((resole, reject) => {
+    return new Promise((resolve, reject) => {
       try {
         this.producer.connect();
-        return this.producer.on('ready', resole);
+        return this.producer.on('ready', resolve);
       } catch (err) {
         return reject(err);
       }
@@ -108,25 +108,24 @@ class Producer {
    *
    * @throws {Error} - It throws an error if the message is not well sent
    */
+  /* istanbul ignore next */
   async produce(message, topic) {
     if (!this.isConnected()) {
       await this.connect();
     }
     const { date, partition, uuid, ...headers } = message.headers || {};
 
-    const isSent = this.producer.produce(
-      topic,
-      partition,
-      Buffer.from(JSON.stringify({ ...ommitHeaders(message), headers })),
-      uuid || uuidFactory.v4(),
-      date || Date.now(),
-      undefined,
-      headers,
+    return new Promise((resolve, reject) =>
+      this.producer.produce(
+        topic,
+        partition,
+        Buffer.from(JSON.stringify({ ...ommitHeaders(message), headers })),
+        uuid || uuidFactory.v4(),
+        date || Date.now(),
+        (error, offset) => (error ? reject(error) : resolve(offset)),
+        headers,
+      ),
     );
-
-    if (!isSent) {
-      throw new Error('Message not sent to Kafka.');
-    }
   }
 }
 
