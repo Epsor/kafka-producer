@@ -101,9 +101,9 @@ class Producer {
    * @async
    * @param {Oject}             message                          - The message to publish to the topic `topic`
    * @param {Object}            message.headers                  - Headers of the messages
-   * @param {Date|undefined}    message.hreader.date             - Headers of the messages
-   * @param {int|undefined}     message.hreader.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
-   * @param {String}            message.hreader.uuid             - Message uuid. If not set, one will be set
+   * @param {Date|undefined}    message.headers.date             - Headers of the messages
+   * @param {int|undefined}     message.headers.partition        - Partition number (default= -1). If partition is set to -1, it will use the default partitioner
+   * @param {String}            message.headers.uuid             - Message uuid. If not set, one will be set
    * @param {String}            topic                            - The targeted topic
    *
    * @throws {Error} - It throws an error if the message is not well sent
@@ -122,8 +122,8 @@ class Producer {
         Buffer.from(JSON.stringify({ ...ommitHeaders(message), headers })),
         uuid || uuidFactory.v4(),
         date || Date.now(),
-        (error, offset) => (error ? reject(error) : resolve(offset)),
         headers,
+        (error, offset) => (error ? reject(error) : resolve(offset)),
       ),
     );
   }
