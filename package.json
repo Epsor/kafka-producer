@@ -1,6 +1,6 @@
 {
   "name": "@epsor/kafka-producer",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "description": "Kafka producer abstraction",
   "author": "Epsor",
   "homepage": "https://github.com/Epsor/epsor-v2/tree/master/packages/tunnel-b2c-api-test-kafka-producer#readme",
@@ -43,7 +43,6 @@
   "dependencies": {
     "@babel/cli": "^7.5.0",
     "@babel/preset-env": "^7.5.4",
-    "@epsor/dto": "^2.0.12",
     "lodash": "^4.17.11",
     "node-rdkafka": "^2.7.4",
     "uuid": "^3.3.2"
